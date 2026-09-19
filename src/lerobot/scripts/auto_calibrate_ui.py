@@ -1,6 +1,8 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 """PyQt-based UI for SO auto calibration."""
+
+# ruff: noqa: E402
 
 from __future__ import annotations
 
@@ -22,11 +24,11 @@ from serial.tools import list_ports
 
 from lerobot.motors import auto_calibrate as auto_calibrate_module
 from lerobot.motors.feetech import OperatingMode
+from lerobot.motors.workflow_services import detect_soarm_device_type
 from lerobot.robots import make_robot_from_config, so101_follower  # noqa: F401
 from lerobot.robots.so101_follower import SO101FollowerConfig
 from lerobot.teleoperators import make_teleoperator_from_config, so101_leader  # noqa: F401
 from lerobot.teleoperators.so101_leader import SO101LeaderConfig
-from lerobot.motors.workflow_services import detect_soarm_device_type
 
 try:
     from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal as Signal
@@ -43,8 +45,8 @@ try:
         QLineEdit,
         QMainWindow,
         QMessageBox,
-        QPushButton,
         QPlainTextEdit,
+        QPushButton,
         QSizePolicy,
         QVBoxLayout,
         QWidget,
@@ -66,8 +68,8 @@ except ImportError:
         QLineEdit,
         QMainWindow,
         QMessageBox,
-        QPushButton,
         QPlainTextEdit,
+        QPushButton,
         QSizePolicy,
         QVBoxLayout,
         QWidget,
@@ -697,7 +699,7 @@ class AutoCalibrateWindow(QMainWindow):
         self.port_timer.timeout.connect(self.refresh_ports)
         self.port_timer.start()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event):  # noqa: N802
         if self._log_handler is not None:
             logging.getLogger().removeHandler(self._log_handler)
         super().closeEvent(event)
@@ -848,7 +850,9 @@ class AutoCalibrateWindow(QMainWindow):
         has_running_calibration = self.has_running_calibration()
 
         self.start_button.setEnabled(ready and not is_busy and self.current_status in ACTIVE_STATUSES)
-        self.pause_button.setEnabled(has_running_calibration and self.current_status in {STATUS_CALIBRATING, STATUS_PAUSED})
+        self.pause_button.setEnabled(
+            has_running_calibration and self.current_status in {STATUS_CALIBRATING, STATUS_PAUSED}
+        )
         self.pause_button.setText("继续标定" if is_calibration_paused() else "暂停标定")
         self.recalibrate_button.setEnabled(ready and not is_busy and self.current_status in TERMINAL_STATUSES)
         self.arm_check_button.setEnabled(bool(self.selected_port()) and not is_busy)
@@ -869,9 +873,7 @@ class AutoCalibrateWindow(QMainWindow):
         set_calibration_paused(False)
         self.append_log("")
         self.append_log("=" * 72)
-        self.append_log(
-            f"准备开始标定 | device_type=auto | port={selected_port} | file={filename}"
-        )
+        self.append_log(f"准备开始标定 | device_type=auto | port={selected_port} | file={filename}")
         self.start_worker(CalibrationWorker(selected_port, filename))
 
     def toggle_pause_calibration(self):

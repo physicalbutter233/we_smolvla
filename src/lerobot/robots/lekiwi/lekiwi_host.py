@@ -23,7 +23,6 @@ from dataclasses import dataclass, field
 import cv2
 import draccus
 import zmq
-import argparse
 
 from .config_lekiwi import LeKiwiConfig, LeKiwiHostConfig
 from .lekiwi import LeKiwi
@@ -72,12 +71,11 @@ def main(cfg: LeKiwiServerConfig):
     last_cmd_time = time.time()
     watchdog_active = False
     logging.info("Waiting for commands...")
-    last_cmd_time = 0 #
+    last_cmd_time = 0  #
     try:
         # Business logic
-        start = time.perf_counter()
-        #duration = 0
-        while True : #duration < host.connection_time_s:
+        # duration = 0
+        while True:  # duration < host.connection_time_s:
             loop_start_time = time.time()
             try:
                 msg = host.zmq_cmd_socket.recv_string(zmq.NOBLOCK)
@@ -86,10 +84,9 @@ def main(cfg: LeKiwiServerConfig):
                 last_cmd_time = time.time()
                 watchdog_active = False
             except zmq.Again:
-                if not watchdog_active:
-                    if time.time() - last_cmd_time > 5.0:
-                        logging.warning("No command available for 5s")
-                        last_cmd_time = time.time()
+                if not watchdog_active and time.time() - last_cmd_time > 5.0:
+                    logging.warning("No command available for 5s")
+                    last_cmd_time = time.time()
             except Exception as e:
                 logging.error("Message fetching failed: %s", e)
 

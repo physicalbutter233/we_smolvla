@@ -2,14 +2,16 @@
 
 """Probe Feetech servo registers and infer soarm leader/follower role."""
 
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import argparse
 import logging
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 SRC_ROOT = Path(__file__).resolve().parents[2]
 if str(SRC_ROOT) not in sys.path:
@@ -54,7 +56,9 @@ def _read_1b(packet_handler, port_handler, servo_id: int, address: int) -> int:
     if comm != 0:
         raise RuntimeError(f"read1ByteTxRx failed for id={servo_id}, address={address}: comm={comm}")
     if error != 0:
-        raise RuntimeError(f"read1ByteTxRx returned servo error for id={servo_id}, address={address}: error={error}")
+        raise RuntimeError(
+            f"read1ByteTxRx returned servo error for id={servo_id}, address={address}: error={error}"
+        )
     return int(value)
 
 
@@ -63,7 +67,7 @@ def _iter_found_ids(scs, packet_handler, port_handler, protocol_version: int) ->
         logger.info("Using SDK broadcastPing to scan servo IDs.")
         found = packet_handler.broadcastPing(port_handler)
         if found is not None:
-            return sorted(int(id_) for id_ in found.keys())
+            return sorted(int(id_) for id_ in found)
 
     logger.info("Falling back to sequential ping scan for servo IDs.")
     found_ids: list[int] = []
@@ -100,7 +104,11 @@ def probe_many(
         if not port_handler.setBaudRate(baudrate):
             raise ConnectionError(f"Failed to set baudrate {baudrate} on port: {port}")
 
-        target_ids = list(ids) if ids is not None else _iter_found_ids(scs, packet_handler, port_handler, protocol_version)
+        target_ids = (
+            list(ids)
+            if ids is not None
+            else _iter_found_ids(scs, packet_handler, port_handler, protocol_version)
+        )
         if not target_ids:
             raise RuntimeError("No servos found on the bus.")
 
@@ -110,9 +118,13 @@ def probe_many(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Probe Feetech servo raw registers for soarm role detection.")
+    parser = argparse.ArgumentParser(
+        description="Probe Feetech servo raw registers for soarm role detection."
+    )
     parser.add_argument("--port", required=True, help="Serial port, e.g. COM6 or /dev/ttyUSB0")
-    parser.add_argument("--baudrate", type=int, default=DEFAULT_BAUDRATE, help=f"Baudrate, default {DEFAULT_BAUDRATE}")
+    parser.add_argument(
+        "--baudrate", type=int, default=DEFAULT_BAUDRATE, help=f"Baudrate, default {DEFAULT_BAUDRATE}"
+    )
     parser.add_argument(
         "--protocol-version",
         type=int,

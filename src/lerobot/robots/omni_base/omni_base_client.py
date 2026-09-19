@@ -252,7 +252,9 @@ class OmniBaseClient(Robot):
         and a camera frame. Receives over ZMQ, translate to body-frame vel
         """
         if not self._is_connected:
-            raise DeviceNotConnectedError("OmniBaseClient is not connected. You need to run `robot.connect()`.")
+            raise DeviceNotConnectedError(
+                "OmniBaseClient is not connected. You need to run `robot.connect()`."
+            )
 
         frames, obs_dict = self._get_data()
 

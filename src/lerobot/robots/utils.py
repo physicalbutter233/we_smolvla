@@ -60,7 +60,7 @@ def make_robot_from_config(config: RobotConfig) -> Robot:
         from .bi_so101_follower import BiSO101Follower
 
         return BiSO101Follower(config)
-    elif "xlerobot" == config.type:
+    elif config.type == "xlerobot":
         from .xlerobot import XLerobot
 
         return XLerobot(config)

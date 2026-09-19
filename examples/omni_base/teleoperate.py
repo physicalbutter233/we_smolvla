@@ -17,7 +17,6 @@
 import time
 
 from lerobot.robots.omni_base import OmniBaseClient, OmniBaseClientConfig
-from lerobot.robots.omni_base import OmniBase, OmniBaseConfig
 from lerobot.teleoperators.keyboard.teleop_keyboard import KeyboardTeleop, KeyboardTeleopConfig
 from lerobot.utils.robot_utils import busy_wait
 from lerobot.utils.visualization_utils import _init_rerun, log_rerun_data

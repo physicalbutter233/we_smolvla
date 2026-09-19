@@ -137,7 +137,7 @@ class SO101Leader(Teleoperator):
         for motor in reversed(self.bus.motors):
             input(f"Connect the controller board to the '{motor}' motor ONLY and press ENTER.")
             target_motor_id = self.bus.motors[motor].id  # 目标序号i
-            
+
             # Check motor on bus according to the rules
             should_setup = self._check_and_confirm_motor_setup(target_motor_id)
             if should_setup:
@@ -156,41 +156,41 @@ class SO101Leader(Teleoperator):
         - Rule b: If only 1 motor with ID 1 (factory default), return True to setup
         - Rule c: If motor ID already matches target_motor_id, return False to skip
         - Rule d: If motor ID is neither 1 nor target_motor_id, ask user confirmation
-        
+
         Args:
             target_motor_id: Target motor ID (i) for current joint
-            
+
         Returns:
             True if setup should proceed, False if should skip
         """
         # Ensure the bus is connected
         if not self.bus.is_connected:
             self.bus.connect(handshake=False)
-        
+
         # Scan all motors at the current baudrate
         current_baudrate = self.bus.get_baudrate()
         self.bus.set_baudrate(current_baudrate)
-        
+
         # Scan all motors on the bus
         found_motors = self.bus.broadcast_ping(raise_on_error=False)
-        
+
         if found_motors is None:
             # If the scan fails, try other baudrates
             for baudrate in self.bus.available_baudrates:
                 if baudrate == current_baudrate:
                     continue
-                    
+
                 self.bus.set_baudrate(baudrate)
                 found_motors = self.bus.broadcast_ping(raise_on_error=False)
                 if found_motors is not None:
                     break
-        
+
         # Restore the original baudrate
         self.bus.set_baudrate(current_baudrate)
-        
+
         if found_motors is None:
             raise RuntimeError("No motors found on the bus. Please connect the motor and try again.")
-        
+
         # Rule a: At most 1 motor on bus
         if len(found_motors) > 1:
             motor_ids = list(found_motors.keys())
@@ -198,21 +198,21 @@ class SO101Leader(Teleoperator):
                 f"Expected at most 1 motor on the bus, but found {len(found_motors)} motors with IDs: {motor_ids}. "
                 f"Please connect only the motor to be set up."
             )
-        
+
         if len(found_motors) == 0:
             raise RuntimeError("No motors found on the bus. Please connect the motor and try again.")
-        
+
         # Only 1 motor found
         found_motor_id = list(found_motors.keys())[0]
-        
+
         # Rule b: If motor ID is 1 (factory default), proceed with setup
         if found_motor_id == 1:
             return True
-        
+
         # Rule c: If motor ID already matches target, skip setup
         if found_motor_id == target_motor_id:
             return False
-        
+
         # Rule d: Motor ID is neither 1 nor target_motor_id, ask user confirmation
         user_input = input(
             f"There is 1 motor on the bus with ID {found_motor_id}, not factory default ID 1. "
@@ -226,42 +226,42 @@ class SO101Leader(Teleoperator):
             raise RuntimeError(
                 f"Motor ID modification cancelled. Found motor ID {found_motor_id}, expected motor ID {target_motor_id}."
             )
-    
+
     def _check_unexpected_motors_on_bus(self, expected_ids: list[int], raise_on_error: bool = True) -> None:
         """
-        Check if there are other motors on the bus, if there are other motors, stop the setup process.        
+        Check if there are other motors on the bus, if there are other motors, stop the setup process.
         Raises:
             RuntimeError: If there are other motors on the bus, stop the setup process.
         """
         # Ensure the bus is connected
         if not self.bus.is_connected:
             self.bus.connect(handshake=False)
-        
+
         # Scan all motors at the current baudrate
         current_baudrate = self.bus.get_baudrate()
         self.bus.set_baudrate(current_baudrate)
-        
+
         # Scan all motors on the bus
         found_motors = self.bus.broadcast_ping(raise_on_error=False)
-        
+
         if found_motors is None:
             # If the scan fails, try other baudrates
             for baudrate in self.bus.available_baudrates:
                 if baudrate == current_baudrate:
                     continue
-                    
+
                 self.bus.set_baudrate(baudrate)
                 found_motors = self.bus.broadcast_ping(raise_on_error=False)
                 if found_motors is not None:
                     break
-        
+
         # Restore the original baudrate
         self.bus.set_baudrate(current_baudrate)
-        
+
         if found_motors is not None:
             # Check if there are other motors on the bus
-            unexpected_motors = [motor_id for motor_id in found_motors.keys() if motor_id not in expected_ids]
-            
+            unexpected_motors = [motor_id for motor_id in found_motors if motor_id not in expected_ids]
+
             if unexpected_motors:
                 unexpected_motors_str = ", ".join(map(str, sorted(unexpected_motors)))
                 if raise_on_error:
@@ -270,12 +270,10 @@ class SO101Leader(Teleoperator):
                         f"Seems this arm has been setup before, not necessary to setup again."
                     )
                 else:
-                    logger.warning(
-                        f"There are unexpected motors on the bus: {unexpected_motors_str}. "
-                    )
+                    logger.warning(f"There are unexpected motors on the bus: {unexpected_motors_str}. ")
                     return False, "Please unplug the last motor and press ENTER to try again."
             return True, "OK"
-        
+
         return False, "No motors found on the bus, please connect the arm and press ENTER to try again."
 
     def get_action(self) -> dict[str, float]:

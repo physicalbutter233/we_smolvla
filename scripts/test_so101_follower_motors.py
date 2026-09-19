@@ -20,7 +20,6 @@ from serial.tools import list_ports
 from lerobot.motors import Motor, MotorNormMode
 from lerobot.motors.feetech import FeetechMotorsBus
 
-
 SO101_FOLLOWER_MOTORS = {
     "shoulder_pan": Motor(1, "sts3215", MotorNormMode.RANGE_M100_100),
     "shoulder_lift": Motor(2, "sts3215", MotorNormMode.RANGE_M100_100),
@@ -165,16 +164,12 @@ def _check_motor(
     temperature = values.get("Present_Temperature")
     max_temperature = values.get("Max_Temperature_Limit")
     if temperature is not None and max_temperature is not None and temperature > max_temperature:
-        limit_errors.append(
-            f"temperature {temperature} C is above configured maximum {max_temperature} C"
-        )
+        limit_errors.append(f"temperature {temperature} C is above configured maximum {max_temperature} C")
 
     status_errors: list[str] = []
     status = values.get("Status")
     if status is not None:
-        status_errors = [
-            label for bit, label in STATUS_BITS.items() if status & bit
-        ]
+        status_errors = [label for bit, label in STATUS_BITS.items() if status & bit]
 
     return MotorResult(
         name=name,
@@ -196,11 +191,11 @@ def _print_result(result: MotorResult, samples: int) -> None:
     print(f"  model_number: {result.model_number} (expected {EXPECTED_MODEL_NUMBER})")
 
     for register, value in result.values.items():
-        if register == "Present_Voltage":
-            print(f"  {register}: {value} ({value / 10:.1f} V)")
-        elif register == "Min_Voltage_Limit":
-            print(f"  {register}: {value} ({value / 10:.1f} V)")
-        elif register == "Max_Voltage_Limit":
+        if (
+            register == "Present_Voltage"
+            or register == "Min_Voltage_Limit"
+            or register == "Max_Voltage_Limit"
+        ):
             print(f"  {register}: {value} ({value / 10:.1f} V)")
         else:
             print(f"  {register}: {value}")

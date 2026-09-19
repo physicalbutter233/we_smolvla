@@ -119,9 +119,9 @@ class OpenCVCamera(Camera):
 
         self.videocapture: cv2.VideoCapture | None = None
         if config.fourcc is not None:
-            self.fourcc: cv2.VideoWriter_fourcc = cv2.VideoWriter_fourcc(*config.fourcc)
+            self.fourcc = cv2.VideoWriter_fourcc(*config.fourcc)
         else:
-            self.fourcc: cv2.VideoWriter_fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
+            self.fourcc = cv2.VideoWriter_fourcc("M", "J", "P", "G")
 
         self.thread: Thread | None = None
         self.stop_event: Event | None = None
@@ -243,8 +243,6 @@ class OpenCVCamera(Camera):
         if not success or not math.isclose(self.fps, actual_fps, rel_tol=1e-3):
             raise RuntimeError(f"{self} failed to set fps={self.fps} ({actual_fps=}).")
 
-
-
     def _validate_width_and_height(self) -> None:
         """Validates and sets the camera's frame capture width and height."""
 
@@ -332,7 +330,7 @@ class OpenCVCamera(Camera):
             camera = cv2.VideoCapture(target)
             if camera.isOpened():
                 # Try MJPG first to reduce USB bandwidth (critical for multi-camera)
-                mjpg_code = cv2.VideoWriter_fourcc(*'MJPG')
+                mjpg_code = cv2.VideoWriter_fourcc(*"MJPG")
                 camera.set(cv2.CAP_PROP_FOURCC, mjpg_code)
                 default_width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
                 default_height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))

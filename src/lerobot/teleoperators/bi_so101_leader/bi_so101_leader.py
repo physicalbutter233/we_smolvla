@@ -116,11 +116,15 @@ class BiSO101Leader(Teleoperator):
     def send_feedback(self, feedback: dict[str, float]) -> None:
         # Remove "left_" prefix
         left_feedback = {
-            key.removeprefix("left_arm_"): value for key, value in feedback.items() if key.startswith("left_arm_")
+            key.removeprefix("left_arm_"): value
+            for key, value in feedback.items()
+            if key.startswith("left_arm_")
         }
         # Remove "right_" prefix
         right_feedback = {
-            key.removeprefix("right_arm_"): value for key, value in feedback.items() if key.startswith("right_arm_")
+            key.removeprefix("right_arm_"): value
+            for key, value in feedback.items()
+            if key.startswith("right_arm_")
         }
 
         if left_feedback:
@@ -130,4 +134,4 @@ class BiSO101Leader(Teleoperator):
 
     def disconnect(self) -> None:
         self.left_arm.disconnect()
-        self.right_arm.disconnect() 
+        self.right_arm.disconnect()

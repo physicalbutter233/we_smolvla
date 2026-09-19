@@ -760,7 +760,9 @@ def auto_calibrate_connected_device(
     saved_path: Path | None = None
 
     if save:
-        saved_path = Path(calibration_path) if calibration_path is not None else Path(device.calibration_fpath)
+        saved_path = (
+            Path(calibration_path) if calibration_path is not None else Path(device.calibration_fpath)
+        )
         save_calibration_to_file(calibration_dict, saved_path)
 
     return AutoCalibrateResult(calibration_dict=calibration_dict, calibration_path=saved_path)

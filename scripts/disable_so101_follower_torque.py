@@ -18,7 +18,6 @@ from serial.tools import list_ports
 from lerobot.motors import Motor, MotorNormMode
 from lerobot.motors.feetech import FeetechMotorsBus
 
-
 SO101_FOLLOWER_MOTORS = {
     "shoulder_pan": Motor(1, "sts3215", MotorNormMode.RANGE_M100_100),
     "shoulder_lift": Motor(2, "sts3215", MotorNormMode.RANGE_M100_100),
@@ -97,7 +96,7 @@ def _read_torque_states(
     bus: FeetechMotorsBus,
     retries: int,
 ) -> tuple[dict[str, int | None], dict[str, str]]:
-    states = {name: None for name in SO101_FOLLOWER_MOTORS}
+    states = dict.fromkeys(SO101_FOLLOWER_MOTORS)
     errors: dict[str, str] = {}
 
     for name in SO101_FOLLOWER_MOTORS:
@@ -124,9 +123,7 @@ def _wait_for_operator(delay_s: float) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Safely disable torque on all six SO-101 follower motors."
-    )
+    parser = argparse.ArgumentParser(description="Safely disable torque on all six SO-101 follower motors.")
     parser.add_argument(
         "--port",
         type=str,
@@ -213,9 +210,7 @@ def main() -> int:
             print(f"Disable pass {pass_index}/{args.passes}")
 
             for name in DISABLE_ORDER:
-                torque_error = _write_register(
-                    bus, name, "Torque_Enable", 0, args.retries
-                )
+                torque_error = _write_register(bus, name, "Torque_Enable", 0, args.retries)
                 if torque_error is not None:
                     print(f"  {name}: Torque_Enable write failed: {torque_error}")
                 else:

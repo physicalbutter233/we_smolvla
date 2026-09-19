@@ -17,7 +17,7 @@
 import time
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
-from lerobot.robots.lekiwi import LeKiwiClient, LeKiwiClientConfig, LeKiwi, LeKiwiConfig
+from lerobot.robots.lekiwi import LeKiwiClient, LeKiwiClientConfig
 from lerobot.utils.constants import ACTION
 from lerobot.utils.robot_utils import precise_sleep
 from lerobot.utils.utils import log_say
@@ -30,9 +30,8 @@ def main():
     robot_config = LeKiwiClientConfig(remote_ip="172.18.134.136", id="lekiwi")
     # robot_config = LeKiwiConfig(port="COM3",id="my_lekiwi")     # local
 
-
     # Initialize the robot
-    robot = LeKiwiClient(robot_config) # remote
+    robot = LeKiwiClient(robot_config)  # remote
     # robot = LeKiwi(robot_config) # local
 
     # Fetch the dataset to replay

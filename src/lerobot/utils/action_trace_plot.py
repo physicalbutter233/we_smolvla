@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import multiprocessing as mp
 import os
@@ -142,8 +143,7 @@ class AsyncActionTraceSampler:
             return None
         if len(timesteps) != len(actions):
             raise ValueError(
-                f"Expected the same number of timesteps and actions, got "
-                f"{len(timesteps)} and {len(actions)}."
+                f"Expected the same number of timesteps and actions, got {len(timesteps)} and {len(actions)}."
             )
 
         predicted_chunk = np.stack([_to_action_vector(action) for action in actions], axis=0)
@@ -328,15 +328,13 @@ def _plot_worker(
                     latest_chunk_len = max(1, len(predicted_chunk_array))
                     timesteps = sample.get("timesteps")
                     if timesteps is None:
-                        chunk_times = (
-                            t + np.arange(len(predicted_chunk_array), dtype=np.float64) * chunk_step
-                        )
+                        chunk_times = t + np.arange(len(predicted_chunk_array), dtype=np.float64) * chunk_step
                     else:
                         chunk_times = np.asarray(timesteps, dtype=np.float64)
                         if len(chunk_times) != len(predicted_chunk_array):
-                            chunk_times = t + np.arange(
-                                len(predicted_chunk_array), dtype=np.float64
-                            ) * chunk_step
+                            chunk_times = (
+                                t + np.arange(len(predicted_chunk_array), dtype=np.float64) * chunk_step
+                            )
 
                     for index in range(min(len(action_names), predicted_chunk_array.shape[1])):
                         points = np.column_stack((chunk_times, predicted_chunk_array[:, index]))
@@ -355,9 +353,7 @@ def _plot_worker(
                 if predicted_chunk is not None:
                     predicted_chunk_array = np.asarray(predicted_chunk, dtype=np.float64)
                     latest_chunk_len = max(1, len(predicted_chunk_array))
-                    chunk_times = (
-                        t + np.arange(len(predicted_chunk_array), dtype=np.float64) * chunk_step
-                    )
+                    chunk_times = t + np.arange(len(predicted_chunk_array), dtype=np.float64) * chunk_step
                     for index in range(min(len(action_names), predicted_chunk_array.shape[1])):
                         points = np.column_stack((chunk_times, predicted_chunk_array[:, index]))
                         predicted_segments[index].append(points)
@@ -458,14 +454,10 @@ class ActionTracePlot:
         try:
             self._queue.put_nowait(sample)
         except queue.Full:
-            try:
+            with contextlib.suppress(queue.Empty):
                 self._queue.get_nowait()
-            except queue.Empty:
-                pass
-            try:
+            with contextlib.suppress(queue.Full):
                 self._queue.put_nowait(sample)
-            except queue.Full:
-                pass
 
     def queue_length(self, policy: Any) -> int:
         return self._sampler.queue_length(policy)
@@ -525,10 +517,8 @@ class ActionTracePlot:
         if self._closed:
             return
         self._closed = True
-        try:
+        with contextlib.suppress(queue.Full):
             self._queue.put_nowait({"type": "stop"})
-        except queue.Full:
-            pass
         self._stop_event.set()
         self._process.join(timeout=2.0)
         if self._process.is_alive():

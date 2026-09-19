@@ -151,11 +151,15 @@ class BiSO101Follower(Robot):
     def send_action(self, action: dict[str, Any]) -> dict[str, Any]:
         # Remove "left_" prefix
         left_action = {
-            key.removeprefix("left_arm_"): value for key, value in action.items() if key.startswith("left_arm_")
+            key.removeprefix("left_arm_"): value
+            for key, value in action.items()
+            if key.startswith("left_arm_")
         }
         # Remove "right_" prefix
         right_action = {
-            key.removeprefix("right_arm_"): value for key, value in action.items() if key.startswith("right_arm_")
+            key.removeprefix("right_arm_"): value
+            for key, value in action.items()
+            if key.startswith("right_arm_")
         }
 
         send_action_left = self.left_arm.send_action(left_action)
@@ -172,4 +176,4 @@ class BiSO101Follower(Robot):
         self.right_arm.disconnect()
 
         for cam in self.cameras.values():
-            cam.disconnect() 
+            cam.disconnect()

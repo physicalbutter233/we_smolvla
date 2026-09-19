@@ -39,4 +39,4 @@ class BiSO101FollowerConfig(RobotConfig):
     right_arm_use_degrees: bool = False
 
     # cameras (shared between both arms)
-    cameras: dict[str, CameraConfig] = field(default_factory=dict) 
+    cameras: dict[str, CameraConfig] = field(default_factory=dict)

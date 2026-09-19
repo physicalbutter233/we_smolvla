@@ -133,17 +133,19 @@ class SO101Follower(Robot):
         )
         range_mins, range_maxes = self.bus.record_ranges_of_motion()
 
-        if 'gripper' in range_mins:
+        if "gripper" in range_mins:
             # add negative offset to gripper to enable just-tight follower grip when leader gripper is closed
             gripper_adjust_offset_deg = 3.5
-            encoding_table = self.bus.model_encoding_table.get(self.bus.motors['gripper'].model, {})
+            encoding_table = self.bus.model_encoding_table.get(self.bus.motors["gripper"].model, {})
             homing_offset_bits = encoding_table.get("Homing_Offset")
             full_range = 1 << (homing_offset_bits + 1)
-            gripper_adjust_offset = - (int)(full_range * gripper_adjust_offset_deg / 360)
-            original_min = range_mins['gripper']
+            gripper_adjust_offset = -(int)(full_range * gripper_adjust_offset_deg / 360)
+            original_min = range_mins["gripper"]
             adjusted_min = original_min + gripper_adjust_offset
-            print(f"Gripper range adjusted: original min={original_min} -> adjusted min={adjusted_min} (offset={gripper_adjust_offset})")
-            range_mins['gripper'] = adjusted_min
+            print(
+                f"Gripper range adjusted: original min={original_min} -> adjusted min={adjusted_min} (offset={gripper_adjust_offset})"
+            )
+            range_mins["gripper"] = adjusted_min
 
         self.calibration = {}
         for motor, m in self.bus.motors.items():
@@ -188,7 +190,7 @@ class SO101Follower(Robot):
         for motor in reversed(self.bus.motors):
             input(f"Connect the controller board to the '{motor}' motor ONLY and press ENTER.")
             target_motor_id = self.bus.motors[motor].id  # 目标序号i
-            
+
             # Check motor on bus according to the rules
             should_setup = self._check_and_confirm_motor_setup(target_motor_id)
             if should_setup:
@@ -207,41 +209,41 @@ class SO101Follower(Robot):
         - Rule b: If only 1 motor with ID 1 (factory default), return True to setup
         - Rule c: If motor ID already matches target_motor_id, return False to skip
         - Rule d: If motor ID is neither 1 nor target_motor_id, ask user confirmation
-        
+
         Args:
             target_motor_id: Target motor ID (i) for current joint
-            
+
         Returns:
             True if setup should proceed, False if should skip
         """
         # Ensure the bus is connected
         if not self.bus.is_connected:
             self.bus.connect(handshake=False)
-        
+
         # Scan all motors at the current baudrate
         current_baudrate = self.bus.get_baudrate()
         self.bus.set_baudrate(current_baudrate)
-        
+
         # Scan all motors on the bus
         found_motors = self.bus.broadcast_ping(raise_on_error=False)
-        
+
         if found_motors is None:
             # If the scan fails, try other baudrates
             for baudrate in self.bus.available_baudrates:
                 if baudrate == current_baudrate:
                     continue
-                    
+
                 self.bus.set_baudrate(baudrate)
                 found_motors = self.bus.broadcast_ping(raise_on_error=False)
                 if found_motors is not None:
                     break
-        
+
         # Restore the original baudrate
         self.bus.set_baudrate(current_baudrate)
-        
+
         if found_motors is None:
             raise RuntimeError("No motors found on the bus. Please connect the motor and try again.")
-        
+
         # Rule a: At most 1 motor on bus
         if len(found_motors) > 1:
             motor_ids = list(found_motors.keys())
@@ -249,21 +251,21 @@ class SO101Follower(Robot):
                 f"Expected at most 1 motor on the bus, but found {len(found_motors)} motors with IDs: {motor_ids}. "
                 f"Please connect only the motor to be set up."
             )
-        
+
         if len(found_motors) == 0:
             raise RuntimeError("No motors found on the bus. Please connect the motor and try again.")
-        
+
         # Only 1 motor found
         found_motor_id = list(found_motors.keys())[0]
-        
+
         # Rule b: If motor ID is 1 (factory default), proceed with setup
         if found_motor_id == 1:
             return True
-        
+
         # Rule c: If motor ID already matches target, skip setup
         if found_motor_id == target_motor_id:
             return False
-        
+
         # Rule d: Motor ID is neither 1 nor target_motor_id, ask user confirmation
         user_input = input(
             f"There is 1 motor on the bus with ID {found_motor_id}, not factory default ID 1. "
@@ -277,11 +279,11 @@ class SO101Follower(Robot):
             raise RuntimeError(
                 f"Motor ID modification cancelled. Found motor ID {found_motor_id}, expected motor ID {target_motor_id}."
             )
-    
+
     def _force_modify_motor_id(self, current_id: int, model_number: int, target_id: int) -> None:
         """
         Force modify a motor's ID from current_id to target_id.
-        
+
         Args:
             current_id: Current motor ID
             model_number: Motor model number
@@ -289,68 +291,76 @@ class SO101Follower(Robot):
         """
         # Find model name from model_number
         from lerobot.motors.feetech.tables import MODEL_NUMBER_TABLE
+
         model_name = None
         for model, num in MODEL_NUMBER_TABLE.items():
             if num == model_number:
                 model_name = model
                 break
-        
+
         if model_name is None:
             raise RuntimeError(f"Unknown model number: {model_number}")
-        
+
         # Get current baudrate
         current_baudrate = self.bus.get_baudrate()
-        
+
         # Disable torque
         self.bus._disable_torque(current_id, model_name)
-        
+
         # Write new ID
         from lerobot.motors.motors_bus import get_address
+
         addr, length = get_address(self.bus.model_ctrl_table, model_name, "ID")
         self.bus._write(addr, length, current_id, target_id)
-        
+
         # Restore baudrate
         self.bus.set_baudrate(current_baudrate)
-    
-    def _check_unexpected_motors_on_bus(self, expected_ids: list[int], raise_on_error: bool = True, target_motor_id: int | None = None, in_setup_loop: bool = False) -> None:
+
+    def _check_unexpected_motors_on_bus(
+        self,
+        expected_ids: list[int],
+        raise_on_error: bool = True,
+        target_motor_id: int | None = None,
+        in_setup_loop: bool = False,
+    ) -> None:
         """
         Check if there are other motors on the bus, if there are other motors, stop the setup process.
-        
+
         Args:
             expected_ids: List of motor IDs that are expected to be on the bus
             raise_on_error: If True, raise RuntimeError on error; otherwise return (False, message)
             target_motor_id: The target motor ID to set (used in force modify prompt). If None, uses expected_ids[0] if available.
-            in_setup_loop: If True, we're in the setup loop. Check if there's exactly 1 motor with target_motor_id. 
+            in_setup_loop: If True, we're in the setup loop. Check if there's exactly 1 motor with target_motor_id.
                           If ID doesn't match, ask user to force modify to target_motor_id.
-        
+
         Raises:
             RuntimeError: If there are other motors on the bus, stop the setup process.
         """
         # Ensure the bus is connected
         if not self.bus.is_connected:
             self.bus.connect(handshake=False)
-        
+
         # Scan all motors at the current baudrate
         current_baudrate = self.bus.get_baudrate()
         self.bus.set_baudrate(current_baudrate)
-        
+
         # Scan all motors on the bus
         found_motors = self.bus.broadcast_ping(raise_on_error=False)
-        
+
         if found_motors is None:
             # If the scan fails, try other baudrates
             for baudrate in self.bus.available_baudrates:
                 if baudrate == current_baudrate:
                     continue
-                    
+
                 self.bus.set_baudrate(baudrate)
                 found_motors = self.bus.broadcast_ping(raise_on_error=False)
                 if found_motors is not None:
                     break
-        
+
         # Restore the original baudrate
         self.bus.set_baudrate(current_baudrate)
-        
+
         if found_motors is not None:
             # If in_setup_loop is True, we're in the setup loop and check if motor ID matches target_motor_id
             if in_setup_loop:
@@ -360,15 +370,18 @@ class SO101Follower(Robot):
                             f"Expected exactly 1 motor on the bus, but found {len(found_motors)} motors: {list(found_motors.keys())}"
                         )
                     else:
-                        return False, f"Expected exactly 1 motor on the bus, but found {len(found_motors)} motors. Please connect only the motor to be set up and press ENTER to try again."
-                
+                        return (
+                            False,
+                            f"Expected exactly 1 motor on the bus, but found {len(found_motors)} motors. Please connect only the motor to be set up and press ENTER to try again.",
+                        )
+
                 # There is exactly 1 motor, check if its ID matches the target ID
                 found_motor_id = list(found_motors.keys())[0]
                 found_model_number = found_motors[found_motor_id]
                 # target_motor_id should be provided when in_setup_loop is True
                 if target_motor_id is None:
                     target_motor_id = expected_ids[0] if expected_ids else 1
-                
+
                 if found_motor_id == target_motor_id:
                     # Motor ID matches target, OK to proceed with setup
                     return True, "OK"
@@ -380,7 +393,9 @@ class SO101Follower(Robot):
                     )
                     if user_input.strip().lower() == "yes":
                         # Force modify the motor ID to target ID
-                        self._force_modify_motor_id(found_motor_id, found_model_number, target_id=target_motor_id)
+                        self._force_modify_motor_id(
+                            found_motor_id, found_model_number, target_id=target_motor_id
+                        )
                         logger.info(f"Motor ID has been modified from {found_motor_id} to {target_motor_id}.")
                         return True, "OK"
                     else:
@@ -394,7 +409,7 @@ class SO101Follower(Robot):
                                 f"Motor ID modification cancelled. Found motor ID {found_motor_id}, expected motor ID {target_motor_id}."
                             )
                             return False, "Please unplug the motor and press ENTER to try again."
-            
+
             # If target_motor_id is provided (not in setup loop), check if there is exactly 1 motor
             # and verify its ID matches the target
             elif target_motor_id is not None:
@@ -404,8 +419,11 @@ class SO101Follower(Robot):
                             f"Expected exactly 1 motor on the bus, but found {len(found_motors)} motors: {list(found_motors.keys())}"
                         )
                     else:
-                        return False, f"Expected exactly 1 motor on the bus, but found {len(found_motors)} motors. Please connect only the motor to be set up and press ENTER to try again."
-                
+                        return (
+                            False,
+                            f"Expected exactly 1 motor on the bus, but found {len(found_motors)} motors. Please connect only the motor to be set up and press ENTER to try again.",
+                        )
+
                 # There is exactly 1 motor, check its ID
                 found_motor_id = list(found_motors.keys())[0]
                 if found_motor_id != target_motor_id:
@@ -415,7 +433,9 @@ class SO101Follower(Robot):
                         f"Do you want to force modify its ID to {target_motor_id}? (yes/no): "
                     )
                     if user_input.strip().lower() == "yes":
-                        logger.info(f"User confirmed to force modify motor ID from {found_motor_id} to {target_motor_id}.")
+                        logger.info(
+                            f"User confirmed to force modify motor ID from {found_motor_id} to {target_motor_id}."
+                        )
                         return True, "OK"
                     else:
                         # User declined, treat as error
@@ -431,10 +451,10 @@ class SO101Follower(Robot):
                 else:
                     # Motor ID matches, OK
                     return True, "OK"
-            
+
             # Normal check: Check if there are other motors on the bus
-            unexpected_motors = [motor_id for motor_id in found_motors.keys() if motor_id not in expected_ids]
-            
+            unexpected_motors = [motor_id for motor_id in found_motors if motor_id not in expected_ids]
+
             if unexpected_motors:
                 unexpected_motors_str = ", ".join(map(str, sorted(unexpected_motors)))
                 # Special case: if there is only 1 motor on the bus and it's not in expected_ids,
@@ -448,7 +468,9 @@ class SO101Follower(Robot):
                         f"Do you want to force modify its ID to {target_id}? (yes/no): "
                     )
                     if user_input.strip().lower() == "yes":
-                        logger.info(f"User confirmed to force modify motor ID from {motor_id} to {target_id}.")
+                        logger.info(
+                            f"User confirmed to force modify motor ID from {motor_id} to {target_id}."
+                        )
                         return True, "OK"
                     else:
                         # User declined, treat as error
@@ -461,7 +483,7 @@ class SO101Follower(Robot):
                                 f"Motor ID modification cancelled. Found motor ID {motor_id}, expected motor ID {target_id}."
                             )
                             return False, "Please unplug the motor and press ENTER to try again."
-                
+
                 # Normal case: multiple unexpected motors or not the special case above
                 if raise_on_error:
                     raise RuntimeError(
@@ -469,12 +491,10 @@ class SO101Follower(Robot):
                         f"Seems this arm has been setup before, not necessary to setup again."
                     )
                 else:
-                    logger.warning(
-                        f"There are unexpected motors on the bus: {unexpected_motors_str}. "
-                    )
+                    logger.warning(f"There are unexpected motors on the bus: {unexpected_motors_str}. ")
                     return False, "Please unplug the last motor and press ENTER to try again."
             return True, "OK"
-        
+
         return False, "No motors found on the bus, please connect the arm and press ENTER to try again."
 
     def get_observation(self) -> dict[str, Any]:

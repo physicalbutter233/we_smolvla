@@ -14,18 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from lerobot.utils.control_utils import init_keyboard_listener
+import argparse
+
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
+from lerobot.datasets.utils import hw_to_dataset_features
 from lerobot.processor import make_default_processors
-from lerobot.robots.lekiwi import LeKiwiClient, LeKiwiClientConfig, LeKiwi, LeKiwiConfig
+from lerobot.robots.lekiwi import LeKiwiClient, LeKiwiClientConfig
 from lerobot.scripts.lerobot_record import record_loop
 from lerobot.teleoperators.keyboard import KeyboardTeleop, KeyboardTeleopConfig
 from lerobot.teleoperators.so101_leader import SO101Leader, SO101LeaderConfig
 from lerobot.utils.constants import ACTION, OBS_STR
-from lerobot.datasets.utils import hw_to_dataset_features
+from lerobot.utils.control_utils import init_keyboard_listener
 from lerobot.utils.utils import log_say
 from lerobot.utils.visualization_utils import init_rerun
-import argparse
 
 NUM_EPISODES = 300
 FPS = 30
@@ -39,10 +40,10 @@ def main():
     parser = argparse.ArgumentParser(description="Record datasets for lekiwi robot")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
-    resume = args.resume 
+    resume = args.resume
 
     # Create the robot and teleoperator configurations
-    robot_config = LeKiwiClientConfig(remote_ip="192.168.200.52", id="joyandai") # remote
+    robot_config = LeKiwiClientConfig(remote_ip="192.168.200.52", id="joyandai")  # remote
     # robot_config = LeKiwiConfig(port="COM3",id="my_lekiwi")     # local
 
     # port in Linux: /dev/ttyACM0, /dev/ttyACM1, etc.
@@ -53,7 +54,7 @@ def main():
 
     # Initialize the robot and teleoperator
     robot = LeKiwiClient(robot_config)  # remote
-    #robot = LeKiwi(robot_config) # local
+    # robot = LeKiwi(robot_config) # local
 
     leader_arm = SO101Leader(leader_arm_config)
     keyboard = KeyboardTeleop(keyboard_config)

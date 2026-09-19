@@ -22,7 +22,11 @@ import logging
 from lerobot.motors.auto_calibrate import AutoCalibrateConfig, auto_calibrate_connected_device
 from lerobot.robots import RobotConfig, make_robot_from_config, so101_follower  # noqa: F401
 from lerobot.robots.so101_follower import SO101FollowerConfig
-from lerobot.teleoperators import TeleoperatorConfig, make_teleoperator_from_config, so101_leader  # noqa: F401
+from lerobot.teleoperators import (  # noqa: F401
+    TeleoperatorConfig,
+    make_teleoperator_from_config,
+    so101_leader,
+)
 from lerobot.teleoperators.so101_leader import SO101LeaderConfig
 from lerobot.utils.utils import init_logging
 

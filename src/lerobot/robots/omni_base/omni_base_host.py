@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import base64
 import json
 import logging
@@ -21,7 +22,6 @@ import time
 
 import cv2
 import zmq
-import argparse
 
 from .config_omni_base import OmniBaseConfig, OmniBaseHostConfig
 from .omni_base import OmniBase

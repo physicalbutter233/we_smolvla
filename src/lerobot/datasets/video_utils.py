@@ -316,7 +316,9 @@ def encode_video_frames(
     """More info on ffmpeg arguments tuning on `benchmark/video/README.md`"""
     # Check encoder availability
     if vcodec not in ["libx264", "h264", "hevc", "libsvtav1"]:
-        raise ValueError(f"Unsupported video codec: {vcodec}. Supported codecs are: libx264, h264, hevc, libsvtav1.")
+        raise ValueError(
+            f"Unsupported video codec: {vcodec}. Supported codecs are: libx264, h264, hevc, libsvtav1."
+        )
 
     video_path = Path(video_path)
     imgs_dir = Path(imgs_dir)
@@ -453,9 +455,7 @@ def concatenate_video_files(
     stream_map = {}
     for input_stream in input_container.streams:
         if input_stream.type in ("video", "audio", "subtitle"):  # only copy compatible streams
-            output_stream = output_container.add_stream_from_template(
-                template=input_stream, opaque=True
-            )
+            output_stream = output_container.add_stream_from_template(template=input_stream, opaque=True)
             stream_map[input_stream.index] = output_stream
             # Set the time base to the input stream time base (missing in the codec context)
             # For stream copy mode, we need to ensure time_base is set correctly

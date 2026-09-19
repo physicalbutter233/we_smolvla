@@ -267,11 +267,15 @@ class FeetechMotorsBus(MotorsBus):
             except Exception as e:
                 # If we can't read Operating_Mode, fall back to checking homing_offset
                 # This maintains backward compatibility
-                logger.warning(f"Could not read Operating_Mode for {motor}: {e}. Checking homing_offset anyway.")
+                logger.warning(
+                    f"Could not read Operating_Mode for {motor}: {e}. Checking homing_offset anyway."
+                )
                 if self.calibration[motor].homing_offset != cal.homing_offset:
                     same_offsets = False
-                    print(f"motor: {motor}, self.calibration[motor].homing_offset: {self.calibration[motor].homing_offset}, cal.homing_offset: {cal.homing_offset}")
-        
+                    print(
+                        f"motor: {motor}, self.calibration[motor].homing_offset: {self.calibration[motor].homing_offset}, cal.homing_offset: {cal.homing_offset}"
+                    )
+
         if not same_offsets:
             print("Calibration offsets mismatch!")
         return same_ranges and same_offsets
@@ -316,19 +320,19 @@ class FeetechMotorsBus(MotorsBus):
         for motor, pos in positions.items():
             model = self._get_motor_model(motor)
             max_res = self.model_resolution_table[model] - 1
-            
+
             # calculate target offset
             target_offset = pos - int(max_res / 2)
             # print(f"target_offset: {target_offset}")
-            
+
             # get Homing_Offset bits from encoding table
             encoding_table = self.model_encoding_table.get(model, {})
             homing_offset_bits = encoding_table.get("Homing_Offset", 11)  # 默认11位
-            
+
             # calculate adjustment value: 2^(bits + 1)
             adjustment_value = 1 << (homing_offset_bits + 1)
             max_offset = (1 << homing_offset_bits) - 1  # 2^bits - 1
-            
+
             # ensure offset is in reasonable range
             # if out of range, adjust by adjustment_value
             while target_offset > max_offset:
@@ -336,7 +340,7 @@ class FeetechMotorsBus(MotorsBus):
             while target_offset < -max_offset:
                 target_offset += adjustment_value
             # print(f"target_offset adjusted: {target_offset}")
-            
+
             half_turn_homings[motor] = target_offset
 
         return half_turn_homings

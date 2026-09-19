@@ -24,14 +24,13 @@ import numpy as np
 
 from lerobot.cameras.utils import make_cameras_from_configs
 from lerobot.errors import DeviceAlreadyConnectedError, DeviceNotConnectedError
-from lerobot.motors import Motor, MotorCalibration, MotorNormMode
+from lerobot.motors import Motor, MotorNormMode
 from lerobot.motors.feetech import (
     FeetechMotorsBus,
     OperatingMode,
 )
 
 from ..robot import Robot
-from ..utils import ensure_safe_goal_position
 from .config_omni_base import OmniBaseConfig
 
 logger = logging.getLogger(__name__)
@@ -51,7 +50,6 @@ class OmniBase(Robot):
     def __init__(self, config: OmniBaseConfig):
         super().__init__(config)
         self.config = config
-        norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100
         self.bus = FeetechMotorsBus(
             port=self.config.port,
             motors={
@@ -126,8 +124,6 @@ class OmniBase(Robot):
                 self.bus.write_calibration(self.calibration)
                 return
         logger.info(f"\nRunning calibration of {self}")
-
-        motors = self.base_motors
 
         self.bus.disable_torque(self.base_motors)
         for name in self.base_motors:
@@ -301,7 +297,6 @@ class OmniBase(Robot):
             base_wheel_vel["base_back_wheel"],
             base_wheel_vel["base_right_wheel"],
         )
-
 
         obs_dict = {**base_vel}
 
