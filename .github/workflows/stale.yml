@@ -15,12 +15,7 @@
 # This workflow handles closing stale issues and PRs.
 name: Stale
 on:
-  # Allows running this workflow manually from the Actions tab
   workflow_dispatch:
-
-  # Runs at 02:00
-  schedule:
-    - cron: "0 2 * * *"
 
 env:
   CLOSE_ISSUE_MESSAGE: >
